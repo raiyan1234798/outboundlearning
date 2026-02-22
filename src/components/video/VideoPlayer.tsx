@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import screenfull from 'screenfull';
 import { isMobile } from 'react-device-detect';
-import { disableDevtool } from 'disable-devtool';
+import disableDevtool from 'disable-devtool';
 
 import {
     HiOutlinePlay,
@@ -102,15 +102,15 @@ export default function VideoPlayer({
                 maxWatchedRef.current = initialPosition;
             }
         }
-        
+
         // Anti-download logic
-         const blockDownloads = (e: any) => {
-             e.preventDefault();
-             return false;
-         };
-         if(video){
+        const blockDownloads = (e: any) => {
+            e.preventDefault();
+            return false;
+        };
+        if (video) {
             video.addEventListener('contextmenu', blockDownloads);
-         }
+        }
     };
 
     const togglePlay = () => {
@@ -143,7 +143,7 @@ export default function VideoPlayer({
     const toggleFullscreen = () => {
         const container = containerRef.current;
         if (!container) return;
-        
+
         // If mobile, try specific logic, else use screenfull
         if (screenfull.isEnabled) {
             screenfull.toggle(container);
@@ -166,9 +166,9 @@ export default function VideoPlayer({
         }
 
         return () => {
-             if (screenfull.isEnabled) {
-                 screenfull.off('change', handleFullscreenChange);
-             }
+            if (screenfull.isEnabled) {
+                screenfull.off('change', handleFullscreenChange);
+            }
         };
     }, []);
 
@@ -201,14 +201,14 @@ export default function VideoPlayer({
                 style={{ flex: 1, position: 'relative', background: 'black', overflow: 'hidden' }}
             >
                 {/* Security Overlay - Blocks extension interactions and right clicks */}
-                 <div style={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 10,
-                        background: 'transparent',
-                        pointerEvents: isPlaying ? 'none' : 'auto' // allow click to play initially
-                 }} onClick={!isPlaying ? togglePlay : undefined} />
-                 
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 10,
+                    background: 'transparent',
+                    pointerEvents: isPlaying ? 'none' : 'auto' // allow click to play initially
+                }} onClick={!isPlaying ? togglePlay : undefined} />
+
                 {/* The actual video */}
                 <video
                     ref={videoRef}
@@ -226,9 +226,9 @@ export default function VideoPlayer({
                         }
                     }}
                     onClick={togglePlay}
-                    style={{ 
-                        width: '100%', 
-                        height: '100%', 
+                    style={{
+                        width: '100%',
+                        height: '100%',
                         objectFit: 'contain',
                         cursor: 'pointer',
                         // CSS prevention tricks
@@ -236,7 +236,7 @@ export default function VideoPlayer({
                         WebkitTouchCallout: 'none',
                         WebkitUserSelect: 'none',
                         userSelect: 'none'
-                     }}
+                    }}
                     playsInline
                     onContextMenu={(e) => e.preventDefault()}
                 />
@@ -292,15 +292,15 @@ export default function VideoPlayer({
                     }}
                 >
                     {/* Progress Bar */}
-                    <div 
-                        onClick={handleProgressClick} 
-                        style={{ 
-                            height: '6px', 
-                            background: 'rgba(255,255,255,0.3)', 
-                            borderRadius: '3px', 
+                    <div
+                        onClick={handleProgressClick}
+                        style={{
+                            height: '6px',
+                            background: 'rgba(255,255,255,0.3)',
+                            borderRadius: '3px',
                             cursor: 'pointer',
                             position: 'relative'
-                         }}>
+                        }}>
                         {/* Max watched indicator */}
                         <div
                             style={{
@@ -311,14 +311,14 @@ export default function VideoPlayer({
                                 borderRadius: '3px',
                             }}
                         />
-                        <div style={{ 
-                            height: '100%', 
-                            width: `${progressPercent}%`, 
-                            background: 'var(--primary)', 
+                        <div style={{
+                            height: '100%',
+                            width: `${progressPercent}%`,
+                            background: 'var(--primary)',
                             borderRadius: '3px',
                             position: 'relative'
                         }}>
-                             <div style={{
+                            <div style={{
                                 width: '12px',
                                 height: '12px',
                                 background: 'white',
@@ -352,21 +352,21 @@ export default function VideoPlayer({
 
                             {/* Speed */}
                             <div style={{ position: 'relative' }}>
-                                <button 
+                                <button
                                     onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                                     style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
                                 >
                                     {speed}x
                                 </button>
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    bottom: '100%', 
-                                    right: 0, 
-                                    background: 'rgba(0,0,0,0.9)', 
-                                    borderRadius: '8px', 
-                                    padding: '8px', 
-                                    display: showSpeedMenu ? 'flex' : 'none', 
-                                    flexDirection: 'column', 
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '100%',
+                                    right: 0,
+                                    background: 'rgba(0,0,0,0.9)',
+                                    borderRadius: '8px',
+                                    padding: '8px',
+                                    display: showSpeedMenu ? 'flex' : 'none',
+                                    flexDirection: 'column',
                                     gap: '4px',
                                     marginBottom: '8px'
                                 }}>
