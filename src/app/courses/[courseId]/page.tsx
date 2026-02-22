@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import QuizPlayer from '@/components/quiz/QuizPlayer';
-import { demoCourses, demoProgress, demoAccessRequests, formatDuration } from '@/lib/demoData';
+import { demoCourses, demoProgress, demoAccessRequests, demoTeams, formatDuration } from '@/lib/demoData';
 import { QuizAttempt } from '@/lib/types';
 import {
     HiOutlineClock,
@@ -68,7 +68,36 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
         return <div className="loading-screen"><div className="loading-spinner" /></div>;
     }
 
-    // Check access for this course
+    const team = demoTeams.find(t => t.memberIds.includes(userProfile.uid));
+    const teamAssigned = team ? team.assignedCourseIds : [];
+
+    let allAssigned: string[] = [];
+    if (userProfile.role === 'manager') {
+        const teams = demoTeams.filter(t => t.managerId === userProfile.uid);
+        const managedAssigned = teams.flatMap(t => t.assignedCourseIds);
+        allAssigned = [...new Set([...managedAssigned, ...(userProfile.assignedCourseIds || [])])];
+    } else {
+        allAssigned = [...new Set([...teamAssigned, ...(userProfile.assignedCourseIds || [])])];
+    }
+
+    const isCourseAccessible = userProfile.role === 'admin' || allAssigned.includes(course.id);
+
+    if (!isCourseAccessible) {
+        return (
+            <AppLayout pageTitle="Access Denied">
+                <div className="course-empty-state" style={{ marginTop: '50px' }}>
+                    <HiOutlineLockClosed className="empty-icon-large" />
+                    <h3>Access Restricted</h3>
+                    <p>You don&apos;t have access to this course. Contact an administrator to request access.</p>
+                    <button className="btn-primary-custom" onClick={() => router.push('/courses')}>
+                        <HiOutlineArrowLeft /> Back to Courses
+                    </button>
+                </div>
+            </AppLayout>
+        );
+    }
+
+    // Check access for this course's specific lessons
     const userAccess = demoAccessRequests.find(
         r => r.userId === userProfile.uid && r.courseId === course.id && r.status === 'approved'
     );
@@ -327,15 +356,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
                                 {completedLessons.length} of {allLessons.length} lessons completed
                             </div>
-                            {overallProgress === 100 && (
-                                <button
-                                    className="btn-primary-custom"
-                                    onClick={() => router.push('/certificates')}
-                                    style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}
-                                >
-                                    <HiOutlineAcademicCap /> View Certificate
-                                </button>
-                            )}
+
                         </div>
                     </div>
 

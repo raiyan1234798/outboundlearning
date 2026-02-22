@@ -14,6 +14,7 @@ import {
     HiOutlineFilter,
     HiOutlinePlay,
     HiOutlineStar,
+    HiOutlineLockClosed,
 } from 'react-icons/hi';
 
 export default function CoursesPage() {
@@ -32,16 +33,24 @@ export default function CoursesPage() {
 
     // Get courses based on role
     let courses = demoCourses;
-    if (userProfile.role === 'executive') {
-        const team = demoTeams.find(t => t.memberIds.includes(userProfile.uid));
-        if (team) {
-            courses = demoCourses.filter(c => team.assignedCourseIds.includes(c.id));
-        }
-    } else if (userProfile.role === 'manager') {
+
+    // Determine which courses are accessible
+    const team = demoTeams.find(t => t.memberIds.includes(userProfile.uid));
+    const teamAssigned = team ? team.assignedCourseIds : [];
+
+    let allAssigned: string[] = [];
+    if (userProfile.role === 'manager') {
         const teams = demoTeams.filter(t => t.managerId === userProfile.uid);
-        const courseIds = [...new Set(teams.flatMap(t => t.assignedCourseIds))];
-        courses = demoCourses.filter(c => courseIds.includes(c.id));
+        const managedAssigned = teams.flatMap(t => t.assignedCourseIds);
+        allAssigned = [...new Set([...managedAssigned, ...(userProfile.assignedCourseIds || [])])];
+    } else {
+        allAssigned = [...new Set([...teamAssigned, ...(userProfile.assignedCourseIds || [])])];
     }
+
+    const checkAccess = (cId: string) => {
+        if (userProfile.role === 'admin') return true;
+        return allAssigned.includes(cId);
+    };
 
     // Filter
     const categories = ['all', ...new Set(courses.map(c => c.category))];
@@ -122,8 +131,14 @@ export default function CoursesPage() {
                             <div className="col-12 col-md-6 col-lg-4" key={course.id}>
                                 <div
                                     className="card-custom"
-                                    onClick={() => router.push(`/courses/${course.id}`)}
-                                    style={{ cursor: 'pointer', height: '100%' }}
+                                    onClick={() => {
+                                        if (checkAccess(course.id)) {
+                                            router.push(`/courses/${course.id}`);
+                                        } else {
+                                            alert("Access requested! An admin must approve your request before you can begin.");
+                                        }
+                                    }}
+                                    style={{ cursor: 'pointer', height: '100%', position: 'relative' }}
                                 >
                                     <div className="card-thumbnail" style={{
                                         background: `linear-gradient(135deg, 
@@ -142,6 +157,18 @@ export default function CoursesPage() {
                                         <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: 600 }}>
                                             {course.destination}
                                         </span>
+                                        {!checkAccess(course.id) && (
+                                            <div style={{
+                                                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                                background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: 'white', borderRadius: '16px 16px 0 0'
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                                    <HiOutlineLockClosed size={32} />
+                                                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Access Required</span>
+                                                </div>
+                                            </div>
+                                        )}
                                         {isCompleted && (
                                             <div style={{
                                                 position: 'absolute',
@@ -166,7 +193,7 @@ export default function CoursesPage() {
                                             left: '12px',
                                         }}>
                                             <span className={`badge-custom ${course.difficulty === 'beginner' ? 'success' :
-                                                    course.difficulty === 'intermediate' ? 'warning' : 'danger'
+                                                course.difficulty === 'intermediate' ? 'warning' : 'danger'
                                                 }`}>
                                                 {course.difficulty}
                                             </span>

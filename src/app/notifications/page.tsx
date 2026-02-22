@@ -15,7 +15,6 @@ import {
 const demoNotifications = [
     { id: '1', title: 'New Course Assigned', message: 'You have been assigned "Goa Premium Packages" training course.', type: 'course_assigned', isRead: false, createdAt: '2025-02-22T10:00:00', link: '/courses/course-goa' },
     { id: '2', title: 'Lesson Completed!', message: 'You completed "Introduction to Ooty" lesson. Keep going!', type: 'lesson_unlocked', isRead: false, createdAt: '2025-02-21T14:30:00' },
-    { id: '3', title: 'Certificate Earned 🎉', message: 'Congratulations! You earned a certificate for completing Ooty Travel Guide.', type: 'certificate_earned', isRead: true, createdAt: '2025-02-20T09:00:00', link: '/certificates' },
     { id: '4', title: 'Team Update', message: 'Deepa Nair completed 43% of Ooty Travel Guide.', type: 'team_update', isRead: true, createdAt: '2025-02-19T16:00:00' },
     { id: '5', title: 'New Module Available', message: 'A new module "Selling Manali" has been added to Manali Travel Training.', type: 'course_assigned', isRead: true, createdAt: '2025-02-18T11:00:00' },
 ];
@@ -40,7 +39,6 @@ export default function NotificationsPage() {
     const getIcon = (type: string) => {
         switch (type) {
             case 'course_assigned': return <HiOutlineBookOpen />;
-            case 'certificate_earned': return <HiOutlineAcademicCap />;
             case 'team_update': return <HiOutlineUserGroup />;
             default: return <HiOutlineCheckCircle />;
         }
@@ -49,7 +47,6 @@ export default function NotificationsPage() {
     const getIconColor = (type: string) => {
         switch (type) {
             case 'course_assigned': return { bg: '#dbeafe', color: '#1e40af' };
-            case 'certificate_earned': return { bg: '#fef3c7', color: '#92400e' };
             case 'team_update': return { bg: 'var(--primary-lighter)', color: 'var(--primary)' };
             default: return { bg: 'var(--primary-lighter)', color: 'var(--primary)' };
         }

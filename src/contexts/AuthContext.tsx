@@ -96,9 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const docRef = doc(db, 'users', firebaseUser.uid);
             const docSnap = await getDoc(docRef);
 
+            const isAdminEmail = firebaseUser.email === 'abubackerraiyan@gmail.com';
+
             if (docSnap.exists()) {
+                const profileData = docSnap.data() as UserProfile;
+                if (isAdminEmail && profileData.role !== 'admin') {
+                    await updateDoc(docRef, { lastLogin: new Date().toISOString(), role: 'admin' });
+                    return { ...profileData, role: 'admin', lastLogin: new Date().toISOString() };
+                }
+
                 await updateDoc(docRef, { lastLogin: new Date().toISOString() });
-                return docSnap.data() as UserProfile;
+                return profileData;
             }
 
             const newProfile: UserProfile = {
@@ -106,23 +114,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: firebaseUser.email || '',
                 displayName: firebaseUser.displayName || 'User',
                 photoURL: firebaseUser.photoURL || '',
-                role: 'executive',
+                role: isAdminEmail ? 'admin' : 'executive',
                 createdAt: new Date().toISOString(),
                 lastLogin: new Date().toISOString(),
                 isActive: true,
+                isApproved: isAdminEmail ? true : false,
             };
 
             await setDoc(docRef, newProfile);
             return newProfile;
         } catch {
+            const isAdminEmail = firebaseUser.email === 'abubackerraiyan@gmail.com';
             // Fallback if Firestore fails
             return {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
                 displayName: firebaseUser.displayName || 'User',
-                role: 'executive',
+                role: isAdminEmail ? 'admin' : 'executive',
                 createdAt: new Date().toISOString(),
                 isActive: true,
+                isApproved: isAdminEmail ? true : false,
             };
         }
     };

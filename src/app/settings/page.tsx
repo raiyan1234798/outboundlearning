@@ -50,7 +50,7 @@ export default function SettingsPage() {
                                 <div style={{ fontSize: '18px', fontWeight: 700 }}>{userProfile.displayName}</div>
                                 <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{userProfile.email}</div>
                                 <span className={`badge-custom ${userProfile.role === 'admin' ? 'danger' :
-                                        userProfile.role === 'manager' ? 'warning' : 'success'
+                                    userProfile.role === 'manager' ? 'warning' : 'success'
                                     }`} style={{ marginTop: '4px', display: 'inline-flex' }}>
                                     {userProfile.role}
                                 </span>
@@ -94,12 +94,11 @@ export default function SettingsPage() {
                         {[
                             { label: 'Course assignments', desc: 'Get notified when new courses are assigned' },
                             { label: 'Lesson completions', desc: 'Notification when you complete a lesson' },
-                            { label: 'Certificate earned', desc: 'Get notified when you earn a certificate' },
                             { label: 'Team updates', desc: 'Updates about your team members' },
                         ].map((item, idx) => (
                             <div key={idx} style={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '12px 0', borderBottom: idx < 3 ? '1px solid var(--gray-100)' : 'none'
+                                padding: '12px 0', borderBottom: idx < 2 ? '1px solid var(--gray-100)' : 'none'
                             }}>
                                 <div>
                                     <div style={{ fontSize: '14px', fontWeight: 500 }}>{item.label}</div>

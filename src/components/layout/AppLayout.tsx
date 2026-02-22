@@ -20,6 +20,7 @@ import {
     HiOutlineCollection,
     HiOutlineUsers,
     HiOutlinePlusCircle,
+    HiOutlineLockClosed,
 } from 'react-icons/hi';
 import { HiOutlineClipboardDocumentList } from 'react-icons/hi2';
 import { FiChevronLeft } from 'react-icons/fi';
@@ -49,7 +50,6 @@ export default function AppLayout({ children, pageTitle = 'Dashboard' }: AppLayo
     const navItems = [
         { label: 'Dashboard', icon: HiOutlineHome, path: '/dashboard', roles: ['admin', 'manager', 'executive'] },
         { label: 'My Learning', icon: HiOutlineBookOpen, path: '/courses', roles: ['admin', 'manager', 'executive'] },
-        { label: 'Certificates', icon: HiOutlineAcademicCap, path: '/certificates', roles: ['admin', 'manager', 'executive'] },
     ];
 
     const managerItems = [
@@ -84,6 +84,21 @@ export default function AppLayout({ children, pageTitle = 'Dashboard' }: AppLayo
     const initials = userProfile?.displayName
         ? userProfile.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
         : 'U';
+
+    if (userProfile && !userProfile.isApproved && !isAdmin) {
+        return (
+            <div className="loading-screen" style={{ flexDirection: 'column', gap: '16px', textAlign: 'center', padding: '24px' }}>
+                <HiOutlineLockClosed size={64} color="var(--text-muted)" />
+                <h2 style={{ fontSize: '24px', fontWeight: 600 }}>Approval Pending</h2>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 10px' }}>
+                    Your account has been created successfully but is waiting for an administrator to approve your access.
+                </p>
+                <button className="btn-secondary-custom" onClick={handleLogout}>
+                    Sign Out
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="app-layout">
@@ -207,13 +222,7 @@ export default function AppLayout({ children, pageTitle = 'Dashboard' }: AppLayo
                         <HiOutlineBookOpen className="bnav-icon" />
                         <span>Courses</span>
                     </button>
-                    <button
-                        className={`bottom-nav-item ${isActive('/certificates') ? 'active' : ''}`}
-                        onClick={() => navigate('/certificates')}
-                    >
-                        <HiOutlineAcademicCap className="bnav-icon" />
-                        <span>Certs</span>
-                    </button>
+
                     {(isManager || isAdmin) && (
                         <button
                             className={`bottom-nav-item ${isActive('/team') ? 'active' : ''}`}

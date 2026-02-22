@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import screenfull from 'screenfull';
+import { isMobile } from 'react-device-detect';
+import { disableDevtool } from 'disable-devtool';
+
 import {
     HiOutlinePlay,
     HiOutlinePause,
@@ -29,6 +33,7 @@ export default function VideoPlayer({
     completionThreshold = 90,
 }: VideoPlayerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const maxWatchedRef = useRef(initialPosition);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
@@ -38,6 +43,7 @@ export default function VideoPlayer({
     const [showSpeedMenu, setShowSpeedMenu] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const [tabWarning, setTabWarning] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [watchPercent, setWatchPercent] = useState(0);
     const [hasCompleted, setHasCompleted] = useState(false);
     const controlsTimerRef = useRef<NodeJS.Timeout>(null);
@@ -47,32 +53,6 @@ export default function VideoPlayer({
     // Demo video URL if none provided
     const actualUrl = videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
 
-    // Tab switch detection
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.hidden && isPlaying) {
-                videoRef.current?.pause();
-                setIsPlaying(false);
-                setTabWarning(true);
-            }
-        };
-
-        const handleBlur = () => {
-            if (isPlaying) {
-                videoRef.current?.pause();
-                setIsPlaying(false);
-                setTabWarning(true);
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('blur', handleBlur);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, [isPlaying]);
 
     // Auto-hide controls
     const resetControlsTimer = useCallback(() => {
@@ -122,6 +102,15 @@ export default function VideoPlayer({
                 maxWatchedRef.current = initialPosition;
             }
         }
+        
+        // Anti-download logic
+         const blockDownloads = (e: any) => {
+             e.preventDefault();
+             return false;
+         };
+         if(video){
+            video.addEventListener('contextmenu', blockDownloads);
+         }
     };
 
     const togglePlay = () => {
@@ -152,14 +141,36 @@ export default function VideoPlayer({
     };
 
     const toggleFullscreen = () => {
-        const container = videoRef.current?.parentElement;
+        const container = containerRef.current;
         if (!container) return;
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        } else {
-            container.requestFullscreen();
+        
+        // If mobile, try specific logic, else use screenfull
+        if (screenfull.isEnabled) {
+            screenfull.toggle(container);
+            setIsFullscreen(!screenfull.isFullscreen);
+        } else if (videoRef.current && (videoRef.current as any).webkitEnterFullscreen) {
+            (videoRef.current as any).webkitEnterFullscreen(); // For iOS Safari
         }
     };
+
+    // Listen to fullscreen changes
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            if (screenfull.isEnabled) {
+                setIsFullscreen(screenfull.isFullscreen);
+            }
+        };
+
+        if (screenfull.isEnabled) {
+            screenfull.on('change', handleFullscreenChange);
+        }
+
+        return () => {
+             if (screenfull.isEnabled) {
+                 screenfull.off('change', handleFullscreenChange);
+             }
+        };
+    }, []);
 
     // Block seeking on progress bar click
     const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -177,42 +188,34 @@ export default function VideoPlayer({
         }
     };
 
-    const dismissTabWarning = () => {
-        setTabWarning(false);
-        videoRef.current?.play();
-        setIsPlaying(true);
-    };
 
     const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
     const maxWatchedPercent = watchPercent;
 
     return (
-        <>
-            {/* Tab Warning Overlay */}
-            {tabWarning && (
-                <div className="tab-warning-overlay">
-                    <div className="tab-warning-content">
-                        <div className="warning-icon"><FiAlertTriangle /></div>
-                        <h3>Video Paused</h3>
-                        <p>
-                            The video was paused because you switched tabs or minimized the window.
-                            Please stay on this tab to continue watching.
-                        </p>
-                        <button className="btn-primary-custom" onClick={dismissTabWarning}>
-                            Resume Video
-                        </button>
-                    </div>
-                </div>
-            )}
-
+        <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
             <div
                 className="video-player-container"
                 onMouseMove={resetControlsTimer}
                 onMouseLeave={() => isPlaying && setShowControls(false)}
+                style={{ flex: 1, position: 'relative', background: 'black', overflow: 'hidden' }}
             >
+                {/* Security Overlay - Blocks extension interactions and right clicks */}
+                 <div style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 10,
+                        background: 'transparent',
+                        pointerEvents: isPlaying ? 'none' : 'auto' // allow click to play initially
+                 }} onClick={!isPlaying ? togglePlay : undefined} />
+                 
+                {/* The actual video */}
                 <video
                     ref={videoRef}
                     src={actualUrl}
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    disablePictureInPicture
+                    disableRemotePlayback
                     onTimeUpdate={handleTimeUpdate}
                     onLoadedMetadata={handleLoadedMetadata}
                     onEnded={() => {
@@ -223,7 +226,17 @@ export default function VideoPlayer({
                         }
                     }}
                     onClick={togglePlay}
-                    style={{ cursor: 'pointer' }}
+                    style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'contain',
+                        cursor: 'pointer',
+                        // CSS prevention tricks
+                        pointerEvents: showControls ? 'auto' : 'none', // Allow clicks only when controls are visible
+                        WebkitTouchCallout: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none'
+                     }}
                     playsInline
                     onContextMenu={(e) => e.preventDefault()}
                 />
@@ -239,6 +252,7 @@ export default function VideoPlayer({
                             justifyContent: 'center',
                             background: 'rgba(0,0,0,0.3)',
                             cursor: 'pointer',
+                            zIndex: 15
                         }}
                         onClick={togglePlay}
                     >
@@ -263,12 +277,30 @@ export default function VideoPlayer({
                 <div
                     className="video-controls"
                     style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: '20px 16px 12px',
+                        background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
                         opacity: showControls || !isPlaying ? 1 : 0,
                         transition: 'opacity 0.3s',
+                        zIndex: 20,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
                     }}
                 >
                     {/* Progress Bar */}
-                    <div className="video-progress" onClick={handleProgressClick} style={{ cursor: 'pointer' }}>
+                    <div 
+                        onClick={handleProgressClick} 
+                        style={{ 
+                            height: '6px', 
+                            background: 'rgba(255,255,255,0.3)', 
+                            borderRadius: '3px', 
+                            cursor: 'pointer',
+                            position: 'relative'
+                         }}>
                         {/* Max watched indicator */}
                         <div
                             style={{
@@ -276,41 +308,81 @@ export default function VideoPlayer({
                                 height: '100%',
                                 width: `${maxWatchedPercent}%`,
                                 background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '2px',
+                                borderRadius: '3px',
                             }}
                         />
-                        <div className="progress-watched" style={{ width: `${progressPercent}%` }} />
+                        <div style={{ 
+                            height: '100%', 
+                            width: `${progressPercent}%`, 
+                            background: 'var(--primary)', 
+                            borderRadius: '3px',
+                            position: 'relative'
+                        }}>
+                             <div style={{
+                                width: '12px',
+                                height: '12px',
+                                background: 'white',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                right: '-6px',
+                                top: '-3px',
+                                boxShadow: '0 0 4px rgba(0,0,0,0.5)'
+                            }} />
+                        </div>
                     </div>
 
-                    <div className="video-controls-bar">
-                        <div className="video-controls-left">
-                            <button className="video-control-btn" onClick={togglePlay}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                            <button onClick={togglePlay} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer', display: 'flex' }}>
                                 {isPlaying ? <HiOutlinePause /> : <HiOutlinePlay />}
                             </button>
-                            <button className="video-control-btn" onClick={toggleMute}>
+                            <button onClick={toggleMute} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', display: 'flex' }}>
                                 {isMuted ? <HiOutlineVolumeOff /> : <HiOutlineVolumeUp />}
                             </button>
-                            <span className="video-time">
+                            <span style={{ color: 'white', fontSize: '12px', fontFamily: 'monospace' }}>
                                 {formatTime(currentTime)} / {formatTime(duration)}
                             </span>
                         </div>
 
-                        <div className="video-controls-right">
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                             {/* Watch percentage */}
                             <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
                                 {watchPercent}% watched
                             </span>
 
                             {/* Speed */}
-                            <div className="speed-selector">
-                                <button className="speed-btn" onClick={() => setShowSpeedMenu(!showSpeedMenu)}>
+                            <div style={{ position: 'relative' }}>
+                                <button 
+                                    onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                                    style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: '13px', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                                >
                                     {speed}x
                                 </button>
-                                <div className={`speed-menu ${showSpeedMenu ? 'show' : ''}`}>
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    bottom: '100%', 
+                                    right: 0, 
+                                    background: 'rgba(0,0,0,0.9)', 
+                                    borderRadius: '8px', 
+                                    padding: '8px', 
+                                    display: showSpeedMenu ? 'flex' : 'none', 
+                                    flexDirection: 'column', 
+                                    gap: '4px',
+                                    marginBottom: '8px'
+                                }}>
                                     {speeds.map(s => (
                                         <button
                                             key={s}
-                                            className={`speed-option ${speed === s ? 'active' : ''}`}
+                                            style={{
+                                                background: speed === s ? 'var(--primary)' : 'transparent',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '4px 12px',
+                                                borderRadius: '4px',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                textAlign: 'center'
+                                            }}
                                             onClick={() => changeSpeed(s)}
                                         >
                                             {s}x
@@ -319,7 +391,7 @@ export default function VideoPlayer({
                                 </div>
                             </div>
 
-                            <button className="video-control-btn" onClick={toggleFullscreen}>
+                            <button onClick={toggleFullscreen} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', display: 'flex' }}>
                                 <HiOutlineArrowsExpand />
                             </button>
                         </div>
@@ -327,30 +399,32 @@ export default function VideoPlayer({
                 </div>
             </div>
 
-            {/* Lesson Info Bar */}
-            <div style={{
-                background: 'white',
-                border: '1px solid var(--border-color)',
-                borderRadius: '0 0 var(--border-radius) var(--border-radius)',
-                padding: '12px 16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '8px'
-            }}>
-                <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600 }}>{lessonTitle}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        Speed: {speed}x • {watchPercent >= completionThreshold ? '✅ Completed' : `Watch ${completionThreshold}% to complete`}
+            {/* Lesson Info Bar - Only show when NOT in fullscreen */}
+            {!isFullscreen && (
+                <div style={{
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '0 0 var(--border-radius) var(--border-radius)',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                }}>
+                    <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{lessonTitle}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            Speed: {speed}x • {watchPercent >= completionThreshold ? '✅ Completed' : `Watch ${completionThreshold}% to complete`}
+                        </div>
                     </div>
+                    {hasCompleted && (
+                        <span className="badge-custom success" style={{ fontSize: '12px' }}>
+                            ✓ Lesson Complete
+                        </span>
+                    )}
                 </div>
-                {hasCompleted && (
-                    <span className="badge-custom success" style={{ fontSize: '12px' }}>
-                        ✓ Lesson Complete
-                    </span>
-                )}
-            </div>
-        </>
+            )}
+        </div>
     );
 }

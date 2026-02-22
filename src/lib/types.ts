@@ -12,6 +12,8 @@ export interface UserProfile {
     createdAt: string;
     lastLogin?: string;
     isActive: boolean;
+    isApproved?: boolean;
+    assignedCourseIds?: string[];
 }
 
 // ============ Team Types ============

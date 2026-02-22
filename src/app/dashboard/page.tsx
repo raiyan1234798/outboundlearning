@@ -18,7 +18,7 @@ import {
     HiOutlineGlobeAlt,
     HiOutlineLightningBolt,
 } from 'react-icons/hi';
-import { demoCourses, demoProgress, demoTeams, demoUsers, demoCertificates, formatDuration } from '@/lib/demoData';
+import { demoCourses, demoProgress, demoTeams, demoUsers, formatDuration } from '@/lib/demoData';
 
 export default function DashboardPage() {
     const { userProfile, loading, user } = useAuth();
@@ -42,12 +42,12 @@ export default function DashboardPage() {
     if (userProfile.role === 'executive') {
         const myProgress = demoProgress.filter(p => p.userId === userProfile.uid);
         const assignedTeam = demoTeams.find(t => t.memberIds.includes(userProfile.uid));
-        const assignedCourses = assignedTeam
-            ? demoCourses.filter(c => assignedTeam.assignedCourseIds.includes(c.id))
-            : demoCourses.slice(0, 3);
+        const teamAssigned = assignedTeam ? assignedTeam.assignedCourseIds : [];
+        const personalAssigned = userProfile.assignedCourseIds || [];
+        const allAssigned = [...new Set([...teamAssigned, ...personalAssigned])];
+        const assignedCourses = demoCourses.filter(c => allAssigned.includes(c.id));
         const completedCount = myProgress.filter(p => p.overallProgress === 100).length;
         const inProgressCount = myProgress.filter(p => p.overallProgress > 0 && p.overallProgress < 100).length;
-        const certs = demoCertificates.filter(c => c.userId === userProfile.uid);
 
         return (
             <AppLayout pageTitle="Dashboard">
@@ -134,15 +134,7 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="col-6 col-md-3">
-                        <div className="stat-card">
-                            <div className="stat-icon orange"><HiOutlineAcademicCap /></div>
-                            <div className="stat-content">
-                                <div className="stat-label">Certificates</div>
-                                <div className="stat-value">{certs.length}</div>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Assigned Courses */}
@@ -211,42 +203,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Recent Certificates */}
-                {certs.length > 0 && (
-                    <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Your Certificates</h3>
-                        <div className="row g-3">
-                            {certs.map(cert => (
-                                <div className="col-12 col-md-6" key={cert.id}>
-                                    <div className="card-custom" style={{ cursor: 'pointer' }} onClick={() => router.push(`/certificates/${cert.id}`)}>
-                                        <div className="card-body-content" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                            <div style={{
-                                                width: '52px',
-                                                height: '52px',
-                                                borderRadius: '12px',
-                                                background: 'var(--primary-lighter)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '24px',
-                                                color: 'var(--primary)',
-                                                flexShrink: 0
-                                            }}>
-                                                <HiOutlineAcademicCap />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '15px', fontWeight: 600 }}>{cert.courseName}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                                    Completed on {new Date(cert.completedAt).toLocaleDateString()} • #{cert.certificateNumber}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+
             </AppLayout>
         );
     }
@@ -441,7 +398,6 @@ export default function DashboardPage() {
     const totalUsers = demoUsers.length;
     const totalCourses = demoCourses.length;
     const totalCompletions = demoProgress.filter(p => p.overallProgress === 100).length;
-    const totalCerts = demoCertificates.length;
     const avgOverall = demoProgress.length > 0
         ? Math.round(demoProgress.reduce((a, b) => a + b.overallProgress, 0) / demoProgress.length)
         : 0;
@@ -512,15 +468,7 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </div>
-                <div className="col-6 col-md-3">
-                    <div className="stat-card">
-                        <div className="stat-icon orange"><HiOutlineAcademicCap /></div>
-                        <div className="stat-content">
-                            <div className="stat-label">Certificates</div>
-                            <div className="stat-value">{totalCerts}</div>
-                        </div>
-                    </div>
-                </div>
+
             </div>
 
             <div className="row g-3 mb-4">

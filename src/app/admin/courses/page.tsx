@@ -34,6 +34,9 @@ export default function AdminCoursesPage() {
         { id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }
     ]);
 
+    const [courses, setCourses] = useState(demoCourses);
+    const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+
     useEffect(() => {
         if (!loading && !user) router.replace('/login');
     }, [loading, user, router]);
@@ -42,10 +45,42 @@ export default function AdminCoursesPage() {
         return <div className="loading-screen"><div className="loading-spinner" /></div>;
     }
 
-    const filtered = demoCourses.filter(c =>
+    const filtered = courses.filter(c =>
         c.title.toLowerCase().includes(search.toLowerCase()) ||
         c.destination.toLowerCase().includes(search.toLowerCase())
     );
+
+    const resetForm = () => {
+        setCourseName('');
+        setCourseDesc('');
+        setDestination('');
+        setCategory('');
+        setDifficulty('beginner');
+        setTravelSeason('');
+        setModules([
+            { id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }
+        ]);
+        setEditingCourseId(null);
+    };
+
+    const handleEdit = (course: any) => {
+        setCourseName(course.title);
+        setCourseDesc(course.description);
+        setDestination(course.destination);
+        setCategory(course.category);
+        setDifficulty(course.difficulty);
+        setTravelSeason(course.travelSeason);
+        setModules(course.modules.length ? JSON.parse(JSON.stringify(course.modules)) : [{ id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }]);
+        setEditingCourseId(course.id);
+        setShowBuilder(true);
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this course?")) {
+            setCourses(courses.filter(c => c.id !== id));
+        }
+    };
+
 
     const addModule = () => {
         setModules([...modules, {
@@ -86,7 +121,7 @@ export default function AdminCoursesPage() {
                             <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Manage Courses</h2>
                             <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Create, edit, and manage destination training courses.</p>
                         </div>
-                        <button className="btn-primary-custom" onClick={() => setShowBuilder(true)}>
+                        <button className="btn-primary-custom" onClick={() => { resetForm(); setShowBuilder(true); }}>
                             <HiOutlinePlusCircle /> Create Course
                         </button>
                     </div>
@@ -151,10 +186,20 @@ export default function AdminCoursesPage() {
                                                             onClick={() => router.push(`/courses/${course.id}`)}>
                                                             <HiOutlineEye />
                                                         </button>
-                                                        <button className="btn-ghost" style={{ padding: '6px 8px' }}>
+                                                        <button
+                                                            className="btn-ghost"
+                                                            style={{ padding: '6px 8px' }}
+                                                            onClick={() => handleEdit(course)}
+                                                            title="Edit Course"
+                                                        >
                                                             <HiOutlinePencil />
                                                         </button>
-                                                        <button className="btn-ghost" style={{ padding: '6px 8px', color: 'var(--accent-red)' }}>
+                                                        <button
+                                                            className="btn-ghost"
+                                                            style={{ padding: '6px 8px', color: 'var(--accent-red)' }}
+                                                            onClick={() => handleDelete(course.id)}
+                                                            title="Delete Course"
+                                                        >
                                                             <HiOutlineTrash />
                                                         </button>
                                                     </div>
@@ -172,10 +217,10 @@ export default function AdminCoursesPage() {
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                         <div>
-                            <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Create New Course</h2>
+                            <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{editingCourseId ? 'Edit Course' : 'Create New Course'}</h2>
                             <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Build a destination training course with modules and lessons.</p>
                         </div>
-                        <button className="btn-ghost" onClick={() => setShowBuilder(false)}>Cancel</button>
+                        <button className="btn-ghost" onClick={() => { setShowBuilder(false); resetForm(); }}>Cancel</button>
                     </div>
 
                     {/* Course Details */}
@@ -387,14 +432,40 @@ export default function AdminCoursesPage() {
 
                     {/* Save */}
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                        <button className="btn-secondary-custom" onClick={() => setShowBuilder(false)}>
+                        <button className="btn-secondary-custom" onClick={() => { setShowBuilder(false); resetForm(); }}>
                             Cancel
                         </button>
                         <button className="btn-primary-custom" onClick={() => {
-                            alert('Course created successfully! (In production, this saves to Firestore)');
+                            if (editingCourseId) {
+                                setCourses(courses.map(c => c.id === editingCourseId ? { ...c, title: courseName, description: courseDesc, destination, category, difficulty: difficulty as any, travelSeason, modules: modules as any } : c));
+                                alert('Course updated successfully!');
+                            } else {
+                                const newCourse = {
+                                    id: `course-${Date.now()}`,
+                                    title: courseName,
+                                    description: courseDesc,
+                                    destination,
+                                    category,
+                                    difficulty: difficulty as any,
+                                    travelSeason,
+                                    modules: modules as any,
+                                    thumbnail: 'https://images.unsplash.com/photo-auto?q=80&w=800',
+                                    highlights: [],
+                                    sellingTips: [],
+                                    totalDuration: 0,
+                                    totalLessons: modules.reduce((acc, m) => acc + m.lessons.length, 0),
+                                    isPublished: true,
+                                    createdBy: userProfile.uid,
+                                    createdAt: new Date().toISOString(),
+                                    updatedAt: new Date().toISOString()
+                                };
+                                setCourses([...courses, newCourse]);
+                                alert('Course created successfully!');
+                            }
                             setShowBuilder(false);
+                            resetForm();
                         }}>
-                            <HiOutlineCheckCircle /> Publish Course
+                            <HiOutlineCheckCircle /> {editingCourseId ? 'Save Changes' : 'Publish Course'}
                         </button>
                     </div>
                 </>
