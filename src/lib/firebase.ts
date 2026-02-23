@@ -13,7 +13,9 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID?.trim(),
 };
 
-const isValidConfig = typeof firebaseConfig.apiKey === 'string' && firebaseConfig.apiKey.length > 0 && firebaseConfig.apiKey !== 'demo-api-key';
+const isValidConfig = typeof firebaseConfig.apiKey === 'string' &&
+    firebaseConfig.apiKey.length > 20 &&
+    firebaseConfig.apiKey.startsWith('AIza');
 
 let app: FirebaseApp | undefined = undefined;
 let auth: Auth | any = null;
