@@ -75,6 +75,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
+        if (!auth) {
+            console.warn('Firebase Auth is not initialized. Check your environment variables.');
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser);
