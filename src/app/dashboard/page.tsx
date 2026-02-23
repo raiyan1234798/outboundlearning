@@ -68,35 +68,49 @@ export default function DashboardPage() {
         return (
             <AppLayout pageTitle="Dashboard">
                 {/* Welcome */}
-                <div
-                    className="animate-item"
+                <motion.div
+                    className="animated-gradient-bg"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 24 }}
                     style={{
-                        background: 'var(--primary-gradient)',
                         borderRadius: '16px',
                         padding: '32px 24px',
-                        color: 'white',
                         marginBottom: '24px',
                         position: 'relative',
-                        overflow: 'hidden'
-                    }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: '-40px',
-                        right: '-40px',
-                        width: '200px',
-                        height: '200px',
-                        background: 'rgba(255,255,255,0.08)',
-                        borderRadius: '50%'
-                    }} />
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '-60px',
-                        right: '80px',
-                        width: '160px',
-                        height: '160px',
-                        background: 'rgba(255,255,255,0.05)',
-                        borderRadius: '50%'
-                    }} />
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 40px -10px rgba(13, 124, 62, 0.4)'
+                    }}
+                    whileHover={{ scale: 1.01 }}
+                >
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2, type: 'spring' }}
+                        style={{
+                            position: 'absolute',
+                            top: '-40px',
+                            right: '-40px',
+                            width: '200px',
+                            height: '200px',
+                            background: 'rgba(255,255,255,0.08)',
+                            borderRadius: '50%'
+                        }}
+                    />
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.3, type: 'spring' }}
+                        style={{
+                            position: 'absolute',
+                            bottom: '-60px',
+                            right: '80px',
+                            width: '160px',
+                            height: '160px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '50%'
+                        }}
+                    />
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>
                             Welcome back, {userProfile.displayName?.split(' ')[0] || 'Traveler'}! 👋
@@ -107,21 +121,24 @@ export default function DashboardPage() {
                                 : 'Start exploring your assigned destinations to level up your sales skills.'}
                         </p>
                         {inProgressCount > 0 && (
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 className="btn-secondary-custom"
                                 onClick={() => router.push('/courses')}
                                 style={{
                                     marginTop: '16px',
                                     background: 'rgba(255,255,255,0.2)',
                                     color: 'white',
-                                    border: '1.5px solid rgba(255,255,255,0.4)'
+                                    border: '1.5px solid rgba(255,255,255,0.4)',
+                                    backdropFilter: 'blur(10px)'
                                 }}
                             >
                                 <HiOutlinePlay /> Continue Learning
-                            </button>
+                            </motion.button>
                         )}
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Stats */}
                 <div className="row g-3 mb-4">
@@ -177,7 +194,7 @@ export default function DashboardPage() {
                             return (
                                 <div className={`col-12 col-md-6 col-lg-4 animate-item animate-delay-${Math.min(index + 6, 8)}`} key={course.id}>
                                     <div className="card-custom" onClick={() => router.push(`/courses/${course.id}`)} style={{ cursor: 'pointer' }}>
-                                        <div className="card-thumbnail" style={{ background: 'var(--primary-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div className="card-thumbnail animated-gradient-bg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <HiOutlineGlobeAlt style={{ fontSize: '48px', color: 'rgba(255,255,255,0.6)' }} />
                                             {progress?.overallProgress === 100 && (
                                                 <div style={{
@@ -248,20 +265,26 @@ export default function DashboardPage() {
         return (
             <AppLayout pageTitle="Manager Dashboard">
                 {/* Welcome */}
-                <div style={{
-                    background: 'var(--primary-gradient)',
-                    borderRadius: 'var(--border-radius-lg)',
-                    padding: '32px',
-                    color: 'white',
-                    marginBottom: '24px'
-                }}>
+                <motion.div
+                    className="animated-gradient-bg"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    style={{
+                        borderRadius: 'var(--border-radius-lg)',
+                        padding: '32px',
+                        marginBottom: '24px',
+                        boxShadow: '0 20px 40px -10px rgba(13, 124, 62, 0.4)'
+                    }}
+                    whileHover={{ scale: 1.01 }}
+                >
                     <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>
                         Team Overview 📊
                     </h2>
                     <p style={{ opacity: 0.9, fontSize: '14px' }}>
                         Monitor your team&apos;s learning progress and completion rates across all assigned destinations.
                     </p>
-                </div>
+                </motion.div>
 
                 {/* Stats */}
                 <div className="row g-3 mb-4">
@@ -444,26 +467,35 @@ export default function DashboardPage() {
     return (
         <AppLayout pageTitle="Admin Dashboard">
             {/* Welcome */}
-            <div style={{
-                background: 'var(--primary-gradient)',
-                borderRadius: 'var(--border-radius-lg)',
-                padding: '32px',
-                color: 'white',
-                marginBottom: '24px',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                <div style={{
-                    position: 'absolute', top: '-40px', right: '-40px',
-                    width: '200px', height: '200px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%'
-                }} />
+            <motion.div
+                className="animated-gradient-bg"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, type: 'spring' }}
+                style={{
+                    borderRadius: 'var(--border-radius-lg)',
+                    padding: '32px',
+                    marginBottom: '24px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 40px -10px rgba(13, 124, 62, 0.4)'
+                }}
+                whileHover={{ scale: 1.01 }}
+            >
+                <motion.div
+                    initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }}
+                    style={{
+                        position: 'absolute', top: '-40px', right: '-40px',
+                        width: '200px', height: '200px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%'
+                    }}
+                />
                 <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', position: 'relative', zIndex: 1 }}>
                     Platform Overview 🌍
                 </h2>
                 <p style={{ opacity: 0.9, fontSize: '14px', position: 'relative', zIndex: 1 }}>
                     Monitor all learners, courses, and team performance across the Outbound Travelers training platform.
                 </p>
-            </div>
+            </motion.div>
 
             {/* Stats */}
             <div className="row g-3 mb-4">

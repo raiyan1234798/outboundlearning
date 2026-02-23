@@ -110,10 +110,12 @@ export default function CoursesPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {categories.map(cat => (
-                        <button
+                        <motion.button
                             key={cat}
                             className={`btn-ghost ${categoryFilter === cat ? '' : ''}`}
                             onClick={() => setCategoryFilter(cat)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             style={{
                                 background: categoryFilter === cat ? 'var(--primary)' : 'var(--gray-100)',
                                 color: categoryFilter === cat ? 'white' : 'var(--text-secondary)',
@@ -124,7 +126,7 @@ export default function CoursesPage() {
                             }}
                         >
                             {cat === 'all' ? 'All' : cat}
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
             </div>

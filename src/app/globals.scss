@@ -368,10 +368,11 @@ img {
   right: 0;
   left: var(--sidebar-width);
   height: var(--topbar-height);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
   z-index: 999;
   display: flex;
   align-items: center;
@@ -456,12 +457,36 @@ img {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
-  transition: var(--transition);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  will-change: transform, box-shadow;
+}
+
+.card-custom::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  transform: skewX(-25deg);
+  transition: all 0.7s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.card-custom:hover::after {
+  left: 200%;
 }
 
 .card-custom:hover {
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
+  box-shadow: 0 20px 40px -10px rgba(13, 124, 62, 0.15);
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(13, 124, 62, 0.3);
 }
 
 .card-custom .card-thumbnail {
@@ -475,11 +500,11 @@ img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: var(--transition);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card-custom:hover .card-thumbnail img {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 .card-custom .card-body-content {
@@ -661,16 +686,33 @@ img {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary-custom::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: all 0.6s ease;
+}
+
+.btn-primary-custom:hover::before {
+  left: 100%;
 }
 
 .btn-primary-custom:hover {
   background: var(--primary-gradient-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 20px -10px var(--primary);
 }
 
 .btn-secondary-custom {
@@ -683,15 +725,33 @@ img {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary-custom::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(13, 124, 62, 0.1), transparent);
+  transition: all 0.6s ease;
+}
+
+.btn-secondary-custom:hover::before {
+  left: 100%;
 }
 
 .btn-secondary-custom:hover {
   background: var(--primary-lighter);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 20px -10px rgba(13, 124, 62, 0.2);
 }
 
 .btn-ghost {
@@ -3848,4 +3908,25 @@ img {
 .reveal.active {
   opacity: 1;
   transform: translateY(0);
+}
+
+.animated-gradient-bg {
+  background: linear-gradient(-45deg, #0d7c3e, #095e2e, #10b981, #047857);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  color: white;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
