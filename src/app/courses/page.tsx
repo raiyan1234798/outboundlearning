@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, Variants } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { demoCourses, demoTeams, demoProgress, formatDuration } from '@/lib/demoData';
@@ -63,6 +64,21 @@ export default function CoursesPage() {
 
     const myProgress = demoProgress.filter(p => p.userId === userProfile.uid);
 
+    const containerVariants: Variants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants: Variants = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    };
+
     return (
         <AppLayout pageTitle="My Learning">
             {/* Header */}
@@ -121,14 +137,20 @@ export default function CoursesPage() {
                     <p>Try adjusting your search or filter criteria.</p>
                 </div>
             ) : (
-                <div className="row g-3">
+                <motion.div
+                    className="row g-3"
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-50px" }}
+                >
                     {filtered.map(course => {
                         const progress = myProgress.find(p => p.courseId === course.id);
                         const isCompleted = progress?.overallProgress === 100;
                         const isStarted = (progress?.overallProgress || 0) > 0;
 
                         return (
-                            <div className="col-12 col-md-6 col-lg-4" key={course.id}>
+                            <motion.div className="col-12 col-md-6 col-lg-4" key={course.id} variants={itemVariants}>
                                 <div
                                     className="card-custom"
                                     onClick={() => {
@@ -229,10 +251,10 @@ export default function CoursesPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         );
                     })}
-                </div>
+                </motion.div>
             )}
         </AppLayout>
     );

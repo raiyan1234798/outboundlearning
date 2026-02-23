@@ -52,15 +52,17 @@ export default function DashboardPage() {
         return (
             <AppLayout pageTitle="Dashboard">
                 {/* Welcome */}
-                <div style={{
-                    background: 'var(--primary-gradient)',
-                    borderRadius: 'var(--border-radius-lg)',
-                    padding: '32px',
-                    color: 'white',
-                    marginBottom: '24px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
+                <div
+                    className="animate-item"
+                    style={{
+                        background: 'var(--primary-gradient)',
+                        borderRadius: '16px',
+                        padding: '32px 24px',
+                        color: 'white',
+                        marginBottom: '24px',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
                     <div style={{
                         position: 'absolute',
                         top: '-40px',
@@ -107,7 +109,7 @@ export default function DashboardPage() {
 
                 {/* Stats */}
                 <div className="row g-3 mb-4">
-                    <div className="col-6 col-md-3">
+                    <div className="col-6 col-md-3 animate-item animate-delay-1">
                         <div className="stat-card">
                             <div className="stat-icon green"><HiOutlineBookOpen /></div>
                             <div className="stat-content">
@@ -116,7 +118,7 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="col-6 col-md-3">
+                    <div className="col-6 col-md-3 animate-item animate-delay-2">
                         <div className="stat-card">
                             <div className="stat-icon blue"><HiOutlineLightningBolt /></div>
                             <div className="stat-content">
@@ -125,7 +127,7 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="col-6 col-md-3">
+                    <div className="col-6 col-md-3 animate-item animate-delay-3">
                         <div className="stat-card">
                             <div className="stat-icon gold"><HiOutlineCheckCircle /></div>
                             <div className="stat-content">
@@ -134,11 +136,19 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </div>
-
+                    <div className="col-6 col-md-3 animate-item animate-delay-4">
+                        <div className="stat-card">
+                            <div className="stat-icon orange"><HiOutlineStar /></div>
+                            <div className="stat-content">
+                                <div className="stat-label">Achievements</div>
+                                <div className="stat-value">3</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Assigned Courses */}
-                <div style={{ marginBottom: '24px' }}>
+                <div className="animate-item animate-delay-5" style={{ marginBottom: '24px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: 600 }}>Your Courses</h3>
                         <button className="btn-ghost" onClick={() => router.push('/courses')}>
@@ -146,10 +156,10 @@ export default function DashboardPage() {
                         </button>
                     </div>
                     <div className="row g-3">
-                        {assignedCourses.map(course => {
+                        {assignedCourses.map((course, index) => {
                             const progress = myProgress.find(p => p.courseId === course.id);
                             return (
-                                <div className="col-12 col-md-6 col-lg-4" key={course.id}>
+                                <div className={`col-12 col-md-6 col-lg-4 animate-item animate-delay-${Math.min(index + 6, 8)}`} key={course.id}>
                                     <div className="card-custom" onClick={() => router.push(`/courses/${course.id}`)} style={{ cursor: 'pointer' }}>
                                         <div className="card-thumbnail" style={{ background: 'var(--primary-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <HiOutlineGlobeAlt style={{ fontSize: '48px', color: 'rgba(255,255,255,0.6)' }} />

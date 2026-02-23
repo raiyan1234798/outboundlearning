@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     HiOutlineHome,
@@ -200,9 +201,18 @@ export default function AppLayout({ children, pageTitle = 'Dashboard' }: AppLayo
                 </header>
 
                 {/* Page Content */}
-                <div className="page-container animate-fade-in">
-                    {children}
-                </div>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={pathname}
+                        className="page-container"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {children}
+                    </motion.div>
+                </AnimatePresence>
             </div>
 
             {/* Mobile Bottom Nav */}
