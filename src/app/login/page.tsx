@@ -3,9 +3,25 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { FcGoogle } from 'react-icons/fc';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { HiOutlineGlobeAlt } from 'react-icons/hi';
+
+const pageVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } }
+};
+
+const formVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { staggerChildren: 0.1, delayChildren: 0.3 } }
+};
+
+const itemVariants: Variants = {
+    hidden: { opacity: 0, x: -20 },
+    show: { opacity: 1, x: 0, transition: { type: "spring" } }
+};
 
 export default function LoginPage() {
     const [isRegister, setIsRegister] = useState(false);
@@ -49,11 +65,16 @@ export default function LoginPage() {
 
     return (
         <div className="auth-page">
-            <div className="auth-container">
+            <motion.div
+                className="auth-container"
+                variants={pageVariants}
+                initial="hidden"
+                animate="show"
+            >
                 {/* Left Banner */}
                 <div className="auth-banner">
                     <div className="login-header-wrapper">
-                        <div className="login-brand-wrapper">
+                        <motion.div className="login-brand-wrapper" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                             <div className="login-brand-icon">
                                 <HiOutlineGlobeAlt />
                             </div>
@@ -61,16 +82,16 @@ export default function LoginPage() {
                                 <div className="login-brand-title">Outbound</div>
                                 <div className="login-brand-subtitle">Travelers</div>
                             </div>
-                        </div>
-                        <h1 className="auth-banner-title">
+                        </motion.div>
+                        <motion.h1 className="auth-banner-title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
                             Master Every<br />Destination
-                        </h1>
-                        <p className="auth-banner-subtitle">
+                        </motion.h1>
+                        <motion.p className="auth-banner-subtitle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                             Your gateway to comprehensive travel training. Learn about destinations,
                             master selling techniques, and become a travel expert through our
                             structured video courses.
-                        </p>
-                        <div className="login-stats-grid">
+                        </motion.p>
+                        <motion.div className="login-stats-grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                             <div>
                                 <div className="login-stat-value">50+</div>
                                 <div className="login-stat-label">Destinations</div>
@@ -83,25 +104,25 @@ export default function LoginPage() {
                                 <div className="login-stat-value">1K+</div>
                                 <div className="login-stat-label">Trained Staff</div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
 
                 {/* Right Form */}
-                <div className="auth-form-section">
-                    <h2>{isRegister ? 'Create Account' : 'Welcome Back'}</h2>
-                    <p className="auth-subtitle">
+                <motion.div className="auth-form-section" variants={formVariants} initial="hidden" animate="show">
+                    <motion.h2 variants={itemVariants}>{isRegister ? 'Create Account' : 'Welcome Back'}</motion.h2>
+                    <motion.p className="auth-subtitle" variants={itemVariants}>
                         {isRegister
                             ? 'Join the Outbound Travelers training platform'
                             : 'Sign in to continue your learning journey'}
-                    </p>
+                    </motion.p>
 
-                    <button className="google-btn" onClick={handleGoogle} disabled={loading}>
+                    <motion.button className="google-btn" onClick={handleGoogle} disabled={loading} variants={itemVariants} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <FcGoogle size={20} />
                         Continue with Google
-                    </button>
+                    </motion.button>
 
-                    <div className="divider">or</div>
+                    <motion.div className="divider" variants={itemVariants}>or</motion.div>
 
                     {/* Demo Mode Banner */}
                     <div className="login-demo-banner">
@@ -183,8 +204,8 @@ export default function LoginPage() {
                             {isRegister ? 'Sign In' : 'Create Account'}
                         </button>
                     </p>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         </div>
     );
 }

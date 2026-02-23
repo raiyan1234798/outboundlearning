@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
+import { motion } from 'framer-motion';
 import {
     HiOutlineBookOpen,
     HiOutlineAcademicCap,
@@ -19,6 +20,21 @@ import {
     HiOutlineLightningBolt,
 } from 'react-icons/hi';
 import { demoCourses, demoProgress, demoTeams, demoUsers, formatDuration } from '@/lib/demoData';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 export default function DashboardPage() {
     const { userProfile, loading, user } = useAuth();
