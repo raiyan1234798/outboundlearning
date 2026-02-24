@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Poppins } from 'next/font/google';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import "./globals.scss";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Outbound Travelers - Training Platform",
-  description: "Professional travel training platform for sales teams. Learn about destinations through structured video courses.",
-  keywords: "travel training, sales training, destination courses, Outbound Travelers",
+  title: "Outbound | Luxury Travel Training",
+  description: "Master Destinations. Sell Experiences.",
 };
 
 export default function RootLayout({
@@ -22,11 +15,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={poppins.className}>
-      <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+    <html lang="en" className={`${inter.variable}`}>
+      <body className="antialiased min-h-screen flex flex-col">
+        {children}
       </body>
     </html>
   );

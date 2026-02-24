@@ -1,475 +1,299 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import AppLayout from '@/components/layout/AppLayout';
-import { demoCourses } from '@/lib/demoData';
-import {
-    HiOutlinePlusCircle,
-    HiOutlinePencil,
-    HiOutlineTrash,
-    HiOutlineEye,
-    HiOutlineBookOpen,
-    HiOutlineClock,
-    HiOutlineGlobeAlt,
-    HiOutlineCheckCircle,
-    HiOutlineXCircle,
-    HiOutlineSearch,
-} from 'react-icons/hi';
-import { formatDuration } from '@/lib/demoData';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Book, MoreHorizontal, Video, PlayCircle, CheckCircle, ChevronLeft, Award } from "lucide-react";
+import Link from "next/link";
 
-export default function AdminCoursesPage() {
-    const { userProfile, loading, user, isAdmin } = useAuth();
-    const router = useRouter();
-    const [search, setSearch] = useState('');
-    const [showBuilder, setShowBuilder] = useState(false);
-    const [courseName, setCourseName] = useState('');
-    const [courseDesc, setCourseDesc] = useState('');
-    const [destination, setDestination] = useState('');
-    const [category, setCategory] = useState('');
-    const [difficulty, setDifficulty] = useState('beginner');
-    const [travelSeason, setTravelSeason] = useState('');
-    const [modules, setModules] = useState([
-        { id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }
-    ]);
+const DEMO_COURSES = [
+    {
+        id: 1,
+        title: "Mastering Asian Destinations",
+        tag: "Sales Training",
+        desc: "Comprehensive guide to selling outbound packages to Japan, Vietnam, and Thailand.",
+        img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=600&auto=format&fit=crop",
+        video: "https://www.youtube.com/embed/jfKfPfyJRdk", // Lofi hip hop as placeholder demo
+        modules: [
+            { title: "Introduction to Vietnam", duration: "10:30", completed: true },
+            { title: "Selling Japanese Luxury", duration: "15:45", completed: false, active: true },
+            { title: "Thai Street Food Tours", duration: "08:20", completed: false },
+        ]
+    },
+    {
+        id: 2,
+        title: "European River Cruises",
+        tag: "Product Knowledge",
+        desc: "Deep dive into selling high-ticket European river cruises across the Danube and Rhine.",
+        img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=600&auto=format&fit=crop",
+        video: "https://www.youtube.com/embed/LXb3EKWsInQ", // 4K nature video demo
+        modules: [
+            { title: "The Danube Experience", duration: "12:00", completed: false, active: true },
+        ]
+    },
+    {
+        id: 3,
+        title: "Corporate Etiquette 101",
+        tag: "Soft Skills",
+        desc: "Learn the fundamentals of B2B corporate sales and international client etiquette.",
+        img: "https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=600&auto=format&fit=crop",
+        video: "https://www.youtube.com/embed/3JZ_D3ELwOQ",
+        modules: []
+    }
+];
 
-    const [courses, setCourses] = useState(demoCourses);
-    const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+export default function ManageCoursesPage() {
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedCourse, setSelectedCourse] = useState<any>(null);
+    const [quizStarted, setQuizStarted] = useState(false);
+    const [quizAnswered, setQuizAnswered] = useState(false);
+    const [dropdownOpenId, setDropdownOpenId] = useState<number | null>(null);
+
+    const formatVideoUrl = (url: string) => {
+        if (!url) return "";
+        if (url.includes("drive.google.com")) {
+            return url.replace(/\/view.*$/, "/preview");
+        }
+        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+            const separator = url.includes("?") ? "&" : "?";
+            return `${url}${separator}autoplay=0&controls=0&disablekb=1&rel=0&modestbranding=1`;
+        }
+        return url;
+    };
 
     useEffect(() => {
-        if (!loading && !user) router.replace('/login');
-    }, [loading, user, router]);
+        // Simulate network loading for "loading special effects"
+        const timer = setTimeout(() => setIsLoading(false), 1500);
+        return () => clearTimeout(timer);
+    }, []);
 
-    if (loading || !userProfile) {
-        return <div className="loading-screen"><div className="loading-spinner" /></div>;
-    }
-
-    const filtered = courses.filter(c =>
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.destination.toLowerCase().includes(search.toLowerCase())
-    );
-
-    const resetForm = () => {
-        setCourseName('');
-        setCourseDesc('');
-        setDestination('');
-        setCategory('');
-        setDifficulty('beginner');
-        setTravelSeason('');
-        setModules([
-            { id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }
-        ]);
-        setEditingCourseId(null);
-    };
-
-    const handleEdit = (course: any) => {
-        setCourseName(course.title);
-        setCourseDesc(course.description);
-        setDestination(course.destination);
-        setCategory(course.category);
-        setDifficulty(course.difficulty);
-        setTravelSeason(course.travelSeason);
-        setModules(course.modules.length ? JSON.parse(JSON.stringify(course.modules)) : [{ id: 'mod-new-1', title: '', description: '', lessons: [{ id: 'les-new-1', title: '', videoUrl: '' }] }]);
-        setEditingCourseId(course.id);
-        setShowBuilder(true);
-    };
-
-    const handleDelete = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this course?")) {
-            setCourses(courses.filter(c => c.id !== id));
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.15 }
         }
     };
 
-
-    const addModule = () => {
-        setModules([...modules, {
-            id: `mod-new-${modules.length + 1}`,
-            title: '',
-            description: '',
-            lessons: [{ id: `les-new-${Date.now()}`, title: '', videoUrl: '' }]
-        }]);
+    const itemVariants = {
+        hidden: { opacity: 0, y: 40 },
+        show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
     };
 
-    const addLesson = (modIndex: number) => {
-        const updated = [...modules];
-        updated[modIndex].lessons.push({
-            id: `les-new-${Date.now()}`,
-            title: '',
-            videoUrl: ''
-        });
-        setModules(updated);
-    };
+    if (selectedCourse) {
+        return (
+            <AnimatePresence mode="wait">
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                >
+                    <button
+                        onClick={() => { setSelectedCourse(null); setQuizStarted(false); setQuizAnswered(false); }}
+                        className="flex items-center gap-2 text-emerald-700 font-bold hover:bg-emerald-50 px-4 py-2 rounded-xl transition w-fit"
+                    >
+                        <ChevronLeft className="w-5 h-5" /> Back to Courses
+                    </button>
 
-    const removeModule = (modIndex: number) => {
-        setModules(modules.filter((_, i) => i !== modIndex));
-    };
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Video & Content Area */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video border-4 border-slate-800 relative group"
+                            >
+                                <iframe
+                                    className="w-full h-full absolute inset-0"
+                                    src={formatVideoUrl(selectedCourse.video)}
+                                    title="Course Video"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            </motion.div>
 
-    const removeLesson = (modIndex: number, lesIndex: number) => {
-        const updated = [...modules];
-        updated[modIndex].lessons = updated[modIndex].lessons.filter((_, i) => i !== lesIndex);
-        setModules(updated);
-    };
-
-    return (
-        <AppLayout pageTitle="Course Builder">
-            {!showBuilder ? (
-                <>
-                    {/* Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-                        <div>
-                            <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>Manage Courses</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Create, edit, and manage destination training courses.</p>
-                        </div>
-                        <button className="btn-primary-custom" onClick={() => { resetForm(); setShowBuilder(true); }}>
-                            <HiOutlinePlusCircle /> Create Course
-                        </button>
-                    </div>
-
-                    {/* Search */}
-                    <div className="search-bar" style={{ marginBottom: '20px', maxWidth: '400px' }}>
-                        <HiOutlineSearch className="search-icon" />
-                        <input
-                            placeholder="Search courses..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Courses Table */}
-                    <div className="card-custom">
-                        <div className="card-body-content" style={{ padding: 0 }}>
-                            <div style={{ overflowX: 'auto' }}>
-                                <table className="table-custom">
-                                    <thead>
-                                        <tr>
-                                            <th>Course</th>
-                                            <th>Category</th>
-                                            <th>Lessons</th>
-                                            <th>Duration</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filtered.map(course => (
-                                            <tr key={course.id}>
-                                                <td>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                        <div style={{
-                                                            width: '36px', height: '36px', borderRadius: '8px',
-                                                            background: 'var(--primary-lighter)', display: 'flex',
-                                                            alignItems: 'center', justifyContent: 'center',
-                                                            color: 'var(--primary)', fontSize: '18px'
-                                                        }}>
-                                                            <HiOutlineGlobeAlt />
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontWeight: 600 }}>{course.title}</div>
-                                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{course.destination}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="badge-custom info">{course.category}</span>
-                                                </td>
-                                                <td>{course.totalLessons}</td>
-                                                <td>{formatDuration(course.totalDuration)}</td>
-                                                <td>
-                                                    <span className={`badge-custom ${course.isPublished ? 'success' : 'warning'}`}>
-                                                        {course.isPublished ? 'Published' : 'Draft'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                                        <button className="btn-ghost" style={{ padding: '6px 8px' }}
-                                                            onClick={() => router.push(`/courses/${course.id}`)}>
-                                                            <HiOutlineEye />
-                                                        </button>
-                                                        <button
-                                                            className="btn-ghost"
-                                                            style={{ padding: '6px 8px' }}
-                                                            onClick={() => handleEdit(course)}
-                                                            title="Edit Course"
-                                                        >
-                                                            <HiOutlinePencil />
-                                                        </button>
-                                                        <button
-                                                            className="btn-ghost"
-                                                            style={{ padding: '6px 8px', color: 'var(--accent-red)' }}
-                                                            onClick={() => handleDelete(course.id)}
-                                                            title="Delete Course"
-                                                        >
-                                                            <HiOutlineTrash />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                                <span className="text-emerald-600 font-bold text-sm tracking-widest uppercase">{selectedCourse.tag}</span>
+                                <h1 className="text-3xl font-black text-slate-800 mt-2 mb-4">{selectedCourse.title}</h1>
+                                <p className="text-slate-600 leading-relaxed text-lg">{selectedCourse.desc}</p>
                             </div>
-                        </div>
-                    </div>
-                </>
-            ) : (
-                /* Course Builder */
-                <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                        <div>
-                            <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '4px' }}>{editingCourseId ? 'Edit Course' : 'Create New Course'}</h2>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Build a destination training course with modules and lessons.</p>
-                        </div>
-                        <button className="btn-ghost" onClick={() => { setShowBuilder(false); resetForm(); }}>Cancel</button>
-                    </div>
 
-                    {/* Course Details */}
-                    <div className="card-custom" style={{ marginBottom: '20px' }}>
-                        <div className="card-body-content">
-                            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Course Details</h3>
-                            <div className="row g-3">
-                                <div className="col-12 col-md-6">
-                                    <div className="form-group-custom">
-                                        <label>Course Title</label>
-                                        <input placeholder="e.g., Manali Travel Training" value={courseName} onChange={e => setCourseName(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="col-12 col-md-6">
-                                    <div className="form-group-custom">
-                                        <label>Destination</label>
-                                        <input placeholder="e.g., Manali" value={destination} onChange={e => setDestination(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="col-12">
-                                    <div className="form-group-custom">
-                                        <label>Description</label>
-                                        <input placeholder="Course description..." value={courseDesc} onChange={e => setCourseDesc(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="col-12 col-md-4">
-                                    <div className="form-group-custom">
-                                        <label>Category</label>
-                                        <input placeholder="e.g., North India" value={category} onChange={e => setCategory(e.target.value)} />
-                                    </div>
-                                </div>
-                                <div className="col-12 col-md-4">
-                                    <div className="form-group-custom">
-                                        <label>Difficulty</label>
-                                        <select
-                                            style={{
-                                                width: '100%', padding: '12px 16px',
-                                                border: '1.5px solid var(--border-color)',
-                                                borderRadius: 'var(--border-radius-sm)',
-                                                fontFamily: 'Poppins, sans-serif', fontSize: '14px',
-                                                outline: 'none', background: 'white'
-                                            }}
-                                            value={difficulty}
-                                            onChange={e => setDifficulty(e.target.value)}
-                                        >
-                                            <option value="beginner">Beginner</option>
-                                            <option value="intermediate">Intermediate</option>
-                                            <option value="advanced">Advanced</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="col-12 col-md-4">
-                                    <div className="form-group-custom">
-                                        <label>Travel Season</label>
-                                        <input placeholder="e.g., October to June" value={travelSeason} onChange={e => setTravelSeason(e.target.value)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                            {/* Inbuilt Quiz Engine Demo */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="bg-emerald-950 p-8 rounded-3xl shadow-2xl text-white relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] opacity-20 pointer-events-none" />
+                                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2"><Award className="text-emerald-400" /> Knowledge Check</h3>
 
-                    {/* Modules */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h3 style={{ fontSize: '16px', fontWeight: 600 }}>Modules & Lessons</h3>
-                            <button className="btn-secondary-custom" style={{ padding: '8px 16px', fontSize: '13px' }} onClick={addModule}>
-                                <HiOutlinePlusCircle /> Add Module
-                            </button>
-                        </div>
-
-                        {modules.map((mod, modIdx) => (
-                            <div className="card-custom" key={mod.id} style={{ marginBottom: '12px' }}>
-                                <div className="card-body-content">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{
-                                                width: '28px', height: '28px', borderRadius: '50%',
-                                                background: 'var(--primary)', color: 'white',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '12px', fontWeight: 700
-                                            }}>
-                                                {modIdx + 1}
-                                            </span>
-                                            <h4 style={{ fontSize: '14px', fontWeight: 600, margin: 0 }}>Module {modIdx + 1}</h4>
-                                        </div>
-                                        {modules.length > 1 && (
-                                            <button className="btn-ghost" style={{ padding: '4px 8px', color: 'var(--accent-red)' }} onClick={() => removeModule(modIdx)}>
-                                                <HiOutlineTrash />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="row g-2 mb-3">
-                                        <div className="col-12 col-md-6">
-                                            <input
-                                                placeholder="Module title"
-                                                value={mod.title}
-                                                onChange={e => {
-                                                    const u = [...modules];
-                                                    u[modIdx].title = e.target.value;
-                                                    setModules(u);
-                                                }}
-                                                style={{
-                                                    width: '100%', padding: '10px 14px',
-                                                    border: '1.5px solid var(--border-color)',
-                                                    borderRadius: 'var(--border-radius-sm)',
-                                                    fontFamily: 'Poppins, sans-serif', fontSize: '13px',
-                                                    outline: 'none'
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="col-12 col-md-6">
-                                            <input
-                                                placeholder="Module description"
-                                                value={mod.description}
-                                                onChange={e => {
-                                                    const u = [...modules];
-                                                    u[modIdx].description = e.target.value;
-                                                    setModules(u);
-                                                }}
-                                                style={{
-                                                    width: '100%', padding: '10px 14px',
-                                                    border: '1.5px solid var(--border-color)',
-                                                    borderRadius: 'var(--border-radius-sm)',
-                                                    fontFamily: 'Poppins, sans-serif', fontSize: '13px',
-                                                    outline: 'none'
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Lessons */}
-                                    <div style={{
-                                        background: 'var(--gray-50)',
-                                        borderRadius: '8px',
-                                        padding: '12px'
-                                    }}>
-                                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                                            LESSONS
-                                        </div>
-                                        {mod.lessons.map((les, lesIdx) => (
-                                            <div key={les.id} style={{
-                                                display: 'flex',
-                                                gap: '8px',
-                                                marginBottom: '8px',
-                                                alignItems: 'center'
-                                            }}>
-                                                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', width: '24px' }}>
-                                                    {lesIdx + 1}.
-                                                </span>
-                                                <input
-                                                    placeholder="Lesson title"
-                                                    value={les.title}
-                                                    onChange={e => {
-                                                        const u = [...modules];
-                                                        u[modIdx].lessons[lesIdx].title = e.target.value;
-                                                        setModules(u);
-                                                    }}
-                                                    style={{
-                                                        flex: 1, padding: '8px 12px',
-                                                        border: '1px solid var(--border-color)',
-                                                        borderRadius: '6px',
-                                                        fontFamily: 'Poppins, sans-serif', fontSize: '13px',
-                                                        outline: 'none', background: 'white'
-                                                    }}
-                                                />
-                                                <input
-                                                    placeholder="Video URL (Drive/Vimeo)"
-                                                    value={les.videoUrl}
-                                                    onChange={e => {
-                                                        const u = [...modules];
-                                                        u[modIdx].lessons[lesIdx].videoUrl = e.target.value;
-                                                        setModules(u);
-                                                    }}
-                                                    style={{
-                                                        flex: 1, padding: '8px 12px',
-                                                        border: '1px solid var(--border-color)',
-                                                        borderRadius: '6px',
-                                                        fontFamily: 'Poppins, sans-serif', fontSize: '13px',
-                                                        outline: 'none', background: 'white'
-                                                    }}
-                                                />
-                                                {mod.lessons.length > 1 && (
-                                                    <button
-                                                        onClick={() => removeLesson(modIdx, lesIdx)}
-                                                        style={{
-                                                            background: 'none', border: 'none',
-                                                            color: 'var(--accent-red)', cursor: 'pointer',
-                                                            padding: '4px'
-                                                        }}
-                                                    >
-                                                        <HiOutlineXCircle />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                        <button
-                                            className="btn-ghost"
-                                            style={{ fontSize: '12px', padding: '4px 10px', marginTop: '4px' }}
-                                            onClick={() => addLesson(modIdx)}
-                                        >
-                                            <HiOutlinePlusCircle /> Add Lesson
+                                {!quizStarted ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-emerald-100 mb-6 max-w-md mx-auto">Test your understanding of the video module before proceeding to the next lesson.</p>
+                                        <button onClick={() => setQuizStarted(true)} className="bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-black px-8 py-3 rounded-xl transition hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                                            Start Quick Quiz
                                         </button>
                                     </div>
+                                ) : (
+                                    <AnimatePresence mode="wait">
+                                        {!quizAnswered ? (
+                                            <motion.div key="q1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                                                <p className="font-semibold text-lg mb-6">Which of these is a key selling point for Japanese luxury outbound packages?</p>
+                                                <div className="space-y-3">
+                                                    {["Cheap street food availability", "Exclusive bullet train access passes", "Traditional Ryokan stays with Kaiseki dining", "Unlimited theme park entries"].map((opt, i) => (
+                                                        <motion.button
+                                                            key={i}
+                                                            whileHover={{ scale: 1.02, x: 5 }}
+                                                            whileTap={{ scale: 0.98 }}
+                                                            onClick={() => setQuizAnswered(true)}
+                                                            className="w-full text-left p-4 rounded-xl border border-emerald-800 bg-emerald-900/50 hover:bg-emerald-800 hover:border-emerald-500 transition font-medium"
+                                                        >
+                                                            {opt}
+                                                        </motion.button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div key="a1" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
+                                                <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.6)]">
+                                                    <CheckCircle className="w-10 h-10 text-emerald-950" />
+                                                </div>
+                                                <h4 className="text-2xl font-black text-white mb-2">Excellent!</h4>
+                                                <p className="text-emerald-200">You correctly identified the key selling point. Module completed.</p>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                )}
+                            </motion.div>
+                        </div>
+
+                        {/* Sidebar Modules */}
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-xl text-slate-800">Course Modules</h3>
+                            {selectedCourse.modules.map((mod: any, i: number) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex gap-4 ${mod.active ? 'border-emerald-500 bg-white shadow-lg' : mod.completed ? 'border-slate-100 bg-slate-50' : 'border-slate-100 bg-white opacity-70'}`}
+                                >
+                                    <div className={`mt-1 shrink-0 ${mod.completed ? 'text-emerald-500' : mod.active ? 'text-emerald-600 animate-pulse' : 'text-slate-300'}`}>
+                                        {mod.completed ? <CheckCircle className="w-6 h-6" /> : <PlayCircle className="w-6 h-6" />}
+                                    </div>
+                                    <div>
+                                        <h4 className={`font-bold ${mod.active ? 'text-emerald-950' : 'text-slate-700'}`}>{mod.title}</h4>
+                                        <p className="text-sm font-medium text-slate-400">{mod.duration} • {mod.completed ? 'Completed' : 'Pending'}</p>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h2 className="text-3xl font-black text-emerald-950 mb-2">Manage Courses</h2>
+                    <p className="text-slate-500 font-medium">Create, edit, and organize training modules.</p>
+                </div>
+                <Link href="/admin/courses/new" className="bg-emerald-600 text-white hover:bg-emerald-700 font-bold px-6 py-3 rounded-xl transition flex gap-2 items-center mt-4 md:mt-0 shadow-lg shadow-emerald-600/20 active:scale-95">
+                    <Plus className="w-5 h-5" />
+                    New Course
+                </Link>
+            </div>
+
+            {isLoading ? (
+                // Loading Skeletons with sweeping animation
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((_, i) => (
+                        <div key={i} className="bg-white border text-transparent border-slate-100 rounded-3xl overflow-hidden shadow-sm animate-pulse">
+                            <div className="h-48 bg-slate-200"></div>
+                            <div className="p-6 space-y-4">
+                                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                                <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                                <div className="h-4 bg-slate-200 rounded w-full"></div>
+                                <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                    {DEMO_COURSES.map((course) => (
+                        <motion.div
+                            key={course.id}
+                            variants={itemVariants}
+                            whileHover={{ y: -8, scale: 1.01 }}
+                            onClick={() => setSelectedCourse(course)}
+                            className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 transition duration-300 group cursor-pointer flex flex-col h-full"
+                        >
+                            <div className="h-48 relative overflow-hidden bg-emerald-50">
+                                <motion.img
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.6 }}
+                                    src={course.img}
+                                    alt="course"
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                                    <div className="bg-emerald-500 text-white font-bold px-6 py-3 rounded-full flex gap-2 items-center transform translate-y-4 group-hover:translate-y-0 transition">
+                                        <PlayCircle className="w-5 h-5" /> Preview Course
+                                    </div>
+                                </div>
+                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+                                    Published
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            <div className="p-6 flex-1 flex flex-col">
+                                <div className="text-xs font-bold text-emerald-600 tracking-wider uppercase mb-2">{course.tag}</div>
+                                <h3 className="text-xl font-bold text-slate-800 mb-2">{course.title}</h3>
+                                <p className="text-slate-500 text-sm mb-6 line-clamp-2 flex-1">{course.desc}</p>
 
-                    {/* Save */}
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                        <button className="btn-secondary-custom" onClick={() => { setShowBuilder(false); resetForm(); }}>
-                            Cancel
-                        </button>
-                        <button className="btn-primary-custom" onClick={() => {
-                            if (editingCourseId) {
-                                setCourses(courses.map(c => c.id === editingCourseId ? { ...c, title: courseName, description: courseDesc, destination, category, difficulty: difficulty as any, travelSeason, modules: modules as any } : c));
-                                alert('Course updated successfully!');
-                            } else {
-                                const newCourse = {
-                                    id: `course-${Date.now()}`,
-                                    title: courseName,
-                                    description: courseDesc,
-                                    destination,
-                                    category,
-                                    difficulty: difficulty as any,
-                                    travelSeason,
-                                    modules: modules as any,
-                                    thumbnail: 'https://images.unsplash.com/photo-auto?q=80&w=800',
-                                    highlights: [],
-                                    sellingTips: [],
-                                    totalDuration: 0,
-                                    totalLessons: modules.reduce((acc, m) => acc + m.lessons.length, 0),
-                                    isPublished: true,
-                                    createdBy: userProfile.uid,
-                                    createdAt: new Date().toISOString(),
-                                    updatedAt: new Date().toISOString()
-                                };
-                                setCourses([...courses, newCourse]);
-                                alert('Course created successfully!');
-                            }
-                            setShowBuilder(false);
-                            resetForm();
-                        }}>
-                            <HiOutlineCheckCircle /> {editingCourseId ? 'Save Changes' : 'Publish Course'}
-                        </button>
-                    </div>
-                </>
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-sm font-semibold text-slate-500">
+                                    <div className="flex items-center gap-4">
+                                        <span className="flex items-center gap-1.5 hover:text-emerald-600 transition"><Video className="w-4 h-4" /> {course.modules.length > 0 ? '3 Videos' : '1 Video'}</span>
+                                        <span className="flex items-center gap-1.5 hover:text-emerald-600 transition"><Book className="w-4 h-4" /> 1 Quiz</span>
+                                    </div>
+                                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => setDropdownOpenId(dropdownOpenId === course.id ? null : course.id)}
+                                            className="p-2 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition"
+                                            title="Options"
+                                        >
+                                            <MoreHorizontal className="w-5 h-5" />
+                                        </button>
+                                        <AnimatePresence>
+                                            {dropdownOpenId === course.id && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="absolute right-0 bottom-full mb-2 bg-white rounded-xl shadow-xl border border-slate-100 p-2 w-32 z-10 flex flex-col gap-1"
+                                                >
+                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-700">Edit</button>
+                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-amber-600">Draft</button>
+                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-red-600">Delete</button>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </motion.div>
             )}
-        </AppLayout>
+        </div>
     );
 }

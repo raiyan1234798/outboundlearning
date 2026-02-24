@@ -1,47 +1,29 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim(),
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim(),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim(),
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim(),
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim(),
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID?.trim(),
+    apiKey: "AIzaSyBxqGLdLSm_aSVDQiOw9ZJdznR3PGuAc4c",
+    authDomain: "outboundlearning-c7557.firebaseapp.com",
+    projectId: "outboundlearning-c7557",
+    storageBucket: "outboundlearning-c7557.firebasestorage.app",
+    messagingSenderId: "715452118792",
+    appId: "1:715452118792:web:659d9cf7251efe39ef9ebd",
+    measurementId: "G-B3MV1PL1SH"
 };
 
-const isValidConfig = typeof firebaseConfig.apiKey === 'string' &&
-    firebaseConfig.apiKey.length > 20 &&
-    firebaseConfig.apiKey.startsWith('AIza');
-
-let app: FirebaseApp | undefined = undefined;
-let auth: Auth | any = null;
-let db: Firestore | any = null;
-let storage: FirebaseStorage | any = null;
-
-try {
-    if (isValidConfig) {
-        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-        auth = getAuth(app);
-        db = getFirestore(app);
-        storage = getStorage(app);
-    }
-} catch (error) {
-    console.error('Firebase initialization error:', error);
-}
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
 let analytics = null;
-if (typeof window !== 'undefined' && isValidConfig && app) {
-    import('firebase/analytics').then(({ getAnalytics, isSupported }) => {
-        isSupported().then(supported => {
-            if (supported) {
-                analytics = getAnalytics(app as FirebaseApp);
-            }
-        });
-    });
-}
+isSupported().then((supported) => {
+    if (supported) {
+        analytics = getAnalytics(app);
+    }
+});
 
 export { app, auth, db, storage, analytics };
