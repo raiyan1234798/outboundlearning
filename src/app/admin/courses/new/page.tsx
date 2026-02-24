@@ -3,8 +3,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Plus, Save, Image as ImageIcon, Layout, FileText, Video, Trash2, HelpCircle, AlignLeft, Layers } from "lucide-react";
 import { useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
 
 export default function NewCoursePage() {
     const [modules, setModules] = useState<any[]>([
@@ -16,6 +17,38 @@ export default function NewCoursePage() {
             ]
         }
     ]);
+
+    const [title, setTitle] = useState("");
+    const [desc, setDesc] = useState("");
+    const [tag, setTag] = useState("Corporate Training");
+    const [thumbnail, setThumbnail] = useState("https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=600&auto=format&fit=crop");
+    const [isSaving, setIsSaving] = useState(false);
+    const router = useRouter();
+
+    const handleSaveCourse = async (status: string) => {
+        if (!title.trim()) {
+            alert("Please enter a course title.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await addDoc(collection(db, "courses"), {
+                title,
+                desc,
+                tag,
+                img: thumbnail,
+                status,
+                modules,
+                createdAt: serverTimestamp()
+            });
+            router.push("/admin/courses");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving course");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleAddModule = () => {
         setModules([...modules, {
@@ -118,12 +151,12 @@ export default function NewCoursePage() {
                     <p className="text-slate-500 font-medium">Create a new corporate training program.</p>
                 </div>
                 <div className="flex gap-4 mt-4 md:mt-0">
-                    <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-xl transition shadow-sm">
-                        Save Draft
+                    <button disabled={isSaving} onClick={() => handleSaveCourse('draft')} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-xl transition shadow-sm disabled:opacity-50">
+                        {isSaving ? "Saving..." : "Save Draft"}
                     </button>
-                    <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition flex gap-2 items-center shadow-lg shadow-emerald-500/20 active:scale-95">
+                    <button disabled={isSaving} onClick={() => handleSaveCourse('published')} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition flex gap-2 items-center shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50">
                         <Save className="w-5 h-5" />
-                        Publish Course
+                        {isSaving ? "Publishing..." : "Publish Course"}
                     </button>
                 </div>
             </div>
@@ -139,11 +172,11 @@ export default function NewCoursePage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Course Title</label>
-                                <input placeholder="e.g. European Travel Mastery" className="w-full bg-slate-50 border border-slate-200 outline-none p-4 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition" />
+                                <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. European Travel Mastery" className="w-full bg-slate-50 border border-slate-200 outline-none p-4 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition" />
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
-                                <textarea rows={4} placeholder="Outline what trainees will learn..." className="w-full bg-slate-50 border border-slate-200 outline-none p-4 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition resize-none" />
+                                <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} placeholder="Outline what trainees will learn..." className="w-full bg-slate-50 border border-slate-200 outline-none p-4 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition resize-none" />
                             </div>
                         </div>
                     </motion.div>
@@ -313,7 +346,7 @@ export default function NewCoursePage() {
                             Course Media
                         </h3>
                         <label className="block text-sm font-semibold text-slate-700 mb-2">Thumbnail</label>
-                        <div className="w-full h-48 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-emerald-400 rounded-xl flex items-center justify-center flex-col gap-2 cursor-pointer transition text-slate-500 hover:text-emerald-600">
+                        <div onClick={() => alert("Upload successful! A random placeholder has automatically been assigned for this demo.")} className="w-full h-48 bg-slate-50 border-2 border-dashed border-slate-200 hover:border-emerald-400 rounded-xl flex items-center justify-center flex-col gap-2 cursor-pointer transition text-slate-500 hover:text-emerald-600">
                             <Upload className="w-8 h-8 opacity-50" />
                             <span className="font-medium">Upload Image</span>
                             <span className="text-xs text-slate-400">1920x1080 recommended</span>

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Book, MoreHorizontal, Video, PlayCircle, CheckCircle, ChevronLeft, Award } from "lucide-react";
 import Link from "next/link";
+import { collection, getDocs, setDoc, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const DEMO_COURSES = [
     {
@@ -42,6 +44,7 @@ const DEMO_COURSES = [
 ];
 
 export default function ManageCoursesPage() {
+    const [courses, setCourses] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedCourse, setSelectedCourse] = useState<any>(null);
     const [quizStarted, setQuizStarted] = useState(false);
@@ -60,11 +63,54 @@ export default function ManageCoursesPage() {
         return url;
     };
 
+    const fetchCourses = async () => {
+        setIsLoading(true);
+        try {
+            const snapshot = await getDocs(collection(db, "courses"));
+            if (snapshot.empty) {
+                // Seed demo courses
+                for (const c of DEMO_COURSES) {
+                    await setDoc(doc(db, "courses", `demo-${c.id}`), {
+                        ...c,
+                        status: "published"
+                    });
+                }
+                const newSnap = await getDocs(collection(db, "courses"));
+                setCourses(newSnap.docs.map(d => ({ fbId: d.id, ...d.data() })));
+            } else {
+                setCourses(snapshot.docs.map(d => ({ fbId: d.id, ...d.data() })));
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        // Simulate network loading for "loading special effects"
-        const timer = setTimeout(() => setIsLoading(false), 1500);
-        return () => clearTimeout(timer);
+        fetchCourses();
     }, []);
+
+    const handleDeleteCourse = async (courseId: string) => {
+        if (!confirm("Are you sure you want to delete this course?")) return;
+        setDropdownOpenId(null);
+        try {
+            await deleteDoc(doc(db, "courses", courseId));
+            setCourses(courses.filter(c => c.fbId !== courseId));
+        } catch (err) {
+            console.error("Error deleting course", err);
+        }
+    };
+
+    const handleUpdateStatus = async (courseId: string, newStatus: string) => {
+        setDropdownOpenId(null);
+        try {
+            await updateDoc(doc(db, "courses", courseId), { status: newStatus });
+            setCourses(courses.map(c => c.fbId === courseId ? { ...c, status: newStatus } : c));
+        } catch (err) {
+            console.error("Error updating course", err);
+        }
+    };
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -230,9 +276,9 @@ export default function ManageCoursesPage() {
                     animate="show"
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                    {DEMO_COURSES.map((course) => (
+                    {courses.map((course) => (
                         <motion.div
-                            key={course.id}
+                            key={course.fbId}
                             variants={itemVariants}
                             whileHover={{ y: -8, scale: 1.01 }}
                             onClick={() => setSelectedCourse(course)}
@@ -251,8 +297,8 @@ export default function ManageCoursesPage() {
                                         <PlayCircle className="w-5 h-5" /> Preview Course
                                     </div>
                                 </div>
-                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
-                                    Published
+                                <div className={`absolute top-4 right-4 bg-white/90 backdrop-blur shadow-sm text-xs font-bold px-3 py-1 rounded-full ${course.status === 'draft' ? 'text-amber-600' : 'text-emerald-800'}`}>
+                                    {course.status === 'draft' ? 'Draft' : 'Published'}
                                 </div>
                             </div>
                             <div className="p-6 flex-1 flex flex-col">
@@ -267,23 +313,24 @@ export default function ManageCoursesPage() {
                                     </div>
                                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                                         <button
-                                            onClick={() => setDropdownOpenId(dropdownOpenId === course.id ? null : course.id)}
+                                            onClick={() => setDropdownOpenId(dropdownOpenId === course.fbId ? null : course.fbId)}
                                             className="p-2 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition"
                                             title="Options"
                                         >
                                             <MoreHorizontal className="w-5 h-5" />
                                         </button>
                                         <AnimatePresence>
-                                            {dropdownOpenId === course.id && (
+                                            {dropdownOpenId === course.fbId && (
                                                 <motion.div
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
                                                     exit={{ opacity: 0, scale: 0.95 }}
                                                     className="absolute right-0 bottom-full mb-2 bg-white rounded-xl shadow-xl border border-slate-100 p-2 w-32 z-10 flex flex-col gap-1"
                                                 >
-                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-700">Edit</button>
-                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-amber-600">Draft</button>
-                                                    <button className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-red-600">Delete</button>
+                                                    <button onClick={() => alert("Edit mode coming soon!")} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-700">Edit</button>
+                                                    {course.status !== 'draft' && <button onClick={() => handleUpdateStatus(course.fbId, 'draft')} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-amber-600">Draft</button>}
+                                                    {course.status === 'draft' && <button onClick={() => handleUpdateStatus(course.fbId, 'published')} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-600">Publish</button>}
+                                                    <button onClick={() => handleDeleteCourse(course.fbId)} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-red-600">Delete</button>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
