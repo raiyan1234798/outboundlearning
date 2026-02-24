@@ -329,7 +329,7 @@ export default function ManageCoursesPage() {
                                                     exit={{ opacity: 0, scale: 0.95 }}
                                                     className="absolute right-0 bottom-full mb-2 bg-white rounded-xl shadow-xl border border-slate-100 p-2 w-32 z-10 flex flex-col gap-1"
                                                 >
-                                                    <button onClick={() => router.push(`/admin/courses/${course.fbId}`)} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-700">Edit</button>
+                                                    <button onClick={() => router.push(`/admin/courses/edit?id=${course.fbId}`)} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-700">Edit</button>
                                                     {course.status !== 'draft' && <button onClick={() => handleUpdateStatus(course.fbId, 'draft')} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-amber-600">Draft</button>}
                                                     {course.status === 'draft' && <button onClick={() => handleUpdateStatus(course.fbId, 'published')} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-emerald-600">Publish</button>}
                                                     <button onClick={() => handleDeleteCourse(course.fbId)} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-sm font-semibold text-red-600">Delete</button>

@@ -1,14 +1,17 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Plus, Save, Image as ImageIcon, Layout, FileText, Video, Trash2, HelpCircle, AlignLeft, Layers } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function EditCoursePage() {
-    const params = useParams();
-    const courseId = params.id as string;
+function EditCourseContent() {
+    const searchParams = useSearchParams();
+    const courseId = searchParams.get("id");
 
     const [modules, setModules] = useState<any[]>([]);
     const [title, setTitle] = useState("");
@@ -23,9 +26,10 @@ export default function EditCoursePage() {
 
     useEffect(() => {
         const fetchCourse = async () => {
+            if (!courseId) return;
             setIsLoading(true);
             try {
-                const docSnap = await getDoc(doc(db, "courses", courseId));
+                const docSnap = await getDoc(doc(db, "courses", courseId as string));
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     setTitle(data.title || "");
@@ -50,13 +54,13 @@ export default function EditCoursePage() {
     }, [courseId, router]);
 
     const handleSaveCourse = async (status: string) => {
-        if (!title.trim()) {
+        if (!title.trim() || !courseId) {
             alert("Please enter a course title.");
             return;
         }
         setIsSaving(true);
         try {
-            await updateDoc(doc(db, "courses", courseId), {
+            await updateDoc(doc(db, "courses", courseId as string), {
                 title,
                 desc,
                 tag,
@@ -468,5 +472,13 @@ export default function EditCoursePage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function EditCoursePage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold">Loading...</div>}>
+            <EditCourseContent />
+        </Suspense>
     );
 }
