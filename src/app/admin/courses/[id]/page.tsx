@@ -1,32 +1,53 @@
-"use client";
-
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, Plus, Save, Image as ImageIcon, Layout, FileText, Video, Trash2, HelpCircle, AlignLeft, Layers } from "lucide-react";
-import { useState, useRef } from "react";
-import { collection, getDocs, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
-export default function NewCoursePage() {
-    const [modules, setModules] = useState<any[]>([
-        {
-            id: '1',
-            title: "Module 1: Introduction",
-            items: [
-                { id: '1-1', type: 'video', title: 'Welcome Video & Overview', url: '' }
-            ]
-        }
-    ]);
+export default function EditCoursePage() {
+    const params = useParams();
+    const courseId = params.id as string;
 
+    const [modules, setModules] = useState<any[]>([]);
     const [title, setTitle] = useState("");
     const [desc, setDesc] = useState("");
-    const [tag, setTag] = useState("Corporate Training");
-    const [thumbnail, setThumbnail] = useState("https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=600&auto=format&fit=crop");
+    const [tag, setTag] = useState("");
+    const [thumbnail, setThumbnail] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchCourse = async () => {
+            setIsLoading(true);
+            try {
+                const docSnap = await getDoc(doc(db, "courses", courseId));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setTitle(data.title || "");
+                    setDesc(data.desc || "");
+                    setTag(data.tag || "Corporate Training");
+                    setThumbnail(data.img || "");
+                    setModules(data.modules || []);
+                } else {
+                    alert("Course not found!");
+                    router.push("/admin/courses");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error loading course");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        if (courseId) {
+            fetchCourse();
+        }
+    }, [courseId, router]);
 
     const handleSaveCourse = async (status: string) => {
         if (!title.trim()) {
@@ -35,20 +56,19 @@ export default function NewCoursePage() {
         }
         setIsSaving(true);
         try {
-            await addDoc(collection(db, "courses"), {
+            await updateDoc(doc(db, "courses", courseId), {
                 title,
                 desc,
                 tag,
                 img: thumbnail,
                 status,
-                modules,
-                createdAt: serverTimestamp()
+                modules
             });
-            alert(`Course ${status === 'draft' ? 'saved as draft' : 'published'} successfully!`);
+            alert("Course updated successfully!");
             router.push("/admin/courses");
         } catch (err) {
             console.error(err);
-            alert("Error saving course");
+            alert("Error updating course");
         } finally {
             setIsSaving(false);
         }
@@ -71,6 +91,10 @@ export default function NewCoursePage() {
             setIsUploadingImage(false);
         }
     };
+
+    if (isLoading) {
+        return <div className="p-8 text-center text-slate-500 font-bold">Loading course editor...</div>;
+    }
 
     const handleAddModule = () => {
         setModules([...modules, {
@@ -169,8 +193,8 @@ export default function NewCoursePage() {
         <div className="max-w-5xl mx-auto space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div>
-                    <h2 className="text-3xl font-black text-emerald-950 mb-2">Course Studio</h2>
-                    <p className="text-slate-500 font-medium">Create a new corporate training program.</p>
+                    <h2 className="text-3xl font-black text-emerald-950 mb-2">Edit Course</h2>
+                    <p className="text-slate-500 font-medium">Update existing training program content inside the Studio.</p>
                 </div>
                 <div className="flex gap-4 mt-4 md:mt-0">
                     <button disabled={isSaving} onClick={() => handleSaveCourse('draft')} className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3 rounded-xl transition shadow-sm disabled:opacity-50">
@@ -178,7 +202,7 @@ export default function NewCoursePage() {
                     </button>
                     <button disabled={isSaving} onClick={() => handleSaveCourse('published')} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition flex gap-2 items-center shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50">
                         <Save className="w-5 h-5" />
-                        {isSaving ? "Publishing..." : "Publish Course"}
+                        {isSaving ? "Saving..." : "Update Published"}
                     </button>
                 </div>
             </div>
