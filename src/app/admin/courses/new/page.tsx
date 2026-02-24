@@ -104,7 +104,7 @@ export default function NewCoursePage() {
             if (mod.id === moduleId) {
                 return {
                     ...mod,
-                    items: mod.items.filter((item: any) => item.id !== itemId)
+                    items: (mod.items || []).filter((item: any) => item.id !== itemId)
                 }
             }
             return mod;
@@ -116,7 +116,7 @@ export default function NewCoursePage() {
             if (mod.id === moduleId) {
                 return {
                     ...mod,
-                    items: mod.items.map((item: any) => item.id === itemId ? { ...item, [field]: value } : item)
+                    items: (mod.items || []).map((item: any) => item.id === itemId ? { ...item, [field]: value } : item)
                 }
             }
             return mod;
@@ -236,7 +236,7 @@ export default function NewCoursePage() {
 
                                         <div className="space-y-3">
                                             <AnimatePresence>
-                                                {mod.items.map((item: any, itemIdx: number) => (
+                                                {(mod.items || []).map((item: any, itemIdx: number) => (
                                                     <motion.div
                                                         key={item.id}
                                                         initial={{ opacity: 0, scale: 0.95 }}
