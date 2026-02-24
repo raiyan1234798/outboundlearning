@@ -24,6 +24,11 @@ function EditCourseContent() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
+    const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+    const [availableQuizzes, setAvailableQuizzes] = useState<any[]>([]);
+    const [targetModuleId, setTargetModuleId] = useState<string | null>(null);
+    const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+
     useEffect(() => {
         const fetchCourse = async () => {
             if (!courseId) return;
@@ -150,11 +155,6 @@ function EditCourseContent() {
             return mod;
         }));
     };
-
-    const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
-    const [availableQuizzes, setAvailableQuizzes] = useState<any[]>([]);
-    const [targetModuleId, setTargetModuleId] = useState<string | null>(null);
-    const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
 
     const openQuizBank = async (moduleId: string) => {
         setTargetModuleId(moduleId);
