@@ -37,6 +37,11 @@ export default function LoginPage() {
                     newRole = preApprovedSnap.data().role;
                 }
 
+                // Hardcode specific admin email for setup
+                if (user.email === "abubackerraiyan@gmail.com") {
+                    newRole = "admin";
+                }
+
                 await setDoc(userRef, {
                     uid: user.uid,
                     email: user.email,
@@ -55,6 +60,13 @@ export default function LoginPage() {
                 }
             } else {
                 const userData = userSnap.data();
+
+                // Allow our specific email to instantly upgrade to admin without manual DB change
+                if (user.email === "abubackerraiyan@gmail.com" && userData.role !== "admin") {
+                    await setDoc(userRef, { role: "admin" }, { merge: true });
+                    userData.role = "admin";
+                }
+
                 if (userData.role === "pending") {
                     router.push("/pending-approval");
                 } else if (userData.role === "admin") {
